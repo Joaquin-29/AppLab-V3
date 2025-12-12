@@ -190,92 +190,101 @@ def cargar_inventario_a_db(file_path):
 
 def procesar_recetas_csv(file_path):
     """
-    Lee un archivo CSV o XLS de recetas y lo procesa.
-    Busca la fila de encabezados y procesa desde ahí.
+    Lee un archivo XLS de recetas y lo procesa.
+    Cada receta está separada por secciones con headers.
     """
-    # Leer el archivo según su extensión
-    if file_path.lower().endswith(('.xls', '.xlsx')):
-        df = pd.read_excel(file_path, engine='xlrd' if file_path.lower().endswith('.xls') else None, header=None)
-    else:
-        df = pd.read_csv(file_path, header=None)
-    
-    # Encontrar la fila de encabezados (contiene 'artículo' o 'componente')
-    header_idx = None
-    for idx, row in df.iterrows():
-        row_str = str(row.values).lower()
-        if 'artículo' in row_str or 'componente' in row_str:
-            header_idx = idx
-            break
-    
-    if header_idx is None:
-        # Si no encuentra, asumir primera fila
-        header_idx = 0
-    
-    # Usar la fila de encabezados como header
-    df = df.iloc[header_idx:].reset_index(drop=True)
-    df.columns = df.iloc[0]
-    df = df.iloc[1:].reset_index(drop=True)
-    
-    # Normalizar nombres de columnas a minúsculas y quitar espacios
-    df.columns = df.columns.str.strip().str.lower()
-    
-    # Mapear columnas basadas en el contenido
-    col_map = {
-        'codigo_receta': None,
-        'codigo_producto': None,
-        'cantidad': None,
-        'unidad': None
-    }
-    
-    for col in df.columns:
-        col_str = str(col).lower()
-        if 'artículo' in col_str:
-            col_map['codigo_receta'] = col
-        elif 'componente' in col_str:
-            col_map['codigo_producto'] = col
-        elif 'cantidad' in col_str:
-            col_map['cantidad'] = col
-        elif 'unidad' in col_str:
-            col_map['unidad'] = col
-    
-    # Si no se encontraron, asumir posiciones
-    if not all(col_map.values()):
-        if len(df.columns) >= 4:
-            col_map = {
-                'codigo_receta': df.columns[0],
-                'codigo_producto': df.columns[1],
-                'unidad': df.columns[2],
-                'cantidad': df.columns[3]
-            }
-    
-    # Agrupar por receta
-    recetas_dict = {}
-    
-    for _, row in df.iterrows():
-        codigo_receta = str(row.get(col_map.get('codigo_receta', ''), '')).strip()
-        codigo_producto = str(row.get(col_map.get('codigo_producto', ''), '')).strip()
-        cantidad = pd.to_numeric(str(row.get(col_map.get('cantidad', ''), '')).replace(',', '.'), errors='coerce')
-        unidad = str(row.get(col_map.get('unidad', ''), '')).strip()
-        
-        if not codigo_receta or not codigo_producto or pd.isna(cantidad) or not codigo_producto.strip():
-            continue
-        
-        # Usar codigo_receta como nombre
-        nombre_receta = codigo_receta
-        
-        if codigo_receta not in recetas_dict:
-            recetas_dict[codigo_receta] = {
-                'nombre': nombre_receta,
-                'componentes': []
-            }
-        
-        recetas_dict[codigo_receta]['componentes'].append({
-            'codigo_producto': codigo_producto,
-            'cantidad': cantidad,
-            'unidad': unidad
-        })
-    
-    return recetas_dict, list(df.columns), col_map
+    try:
+        # Leer el archivo XLS
+        if file_path.lower().endswith(('.xls', '.xlsx')):
+            engine = 'xlrd' if file_path.lower().endswith('.xls') else None
+            df = pd.read_excel(file_path, engine=engine, header=None)
+        else:
+            df = pd.read_csv(file_path, header=None)
+
+        print(f"Procesando XLS con {len(df)} filas")
+
+        recetas_dict = {}
+        i = 0
+
+        while i < len(df):
+            row = df.iloc[i]
+
+            # Buscar línea que tenga 'Artículo' en columna 1
+            if len(row) > 1 and pd.notna(row.iloc[1]) and str(row.iloc[1]).strip() == 'Artículo':
+                # Extraer código y nombre de la receta
+                if len(row) > 2 and pd.notna(row.iloc[2]):
+                    codigo_receta = str(row.iloc[2]).strip()
+                else:
+                    i += 1
+                    continue
+
+                if len(row) > 5 and pd.notna(row.iloc[5]):
+                    nombre_receta = str(row.iloc[5]).strip()
+                else:
+                    nombre_receta = codigo_receta
+
+                print(f"Encontrada receta: {codigo_receta} - {nombre_receta}")
+
+                # Inicializar la receta
+                if codigo_receta not in recetas_dict:
+                    recetas_dict[codigo_receta] = {
+                        'nombre': nombre_receta,
+                        'componentes': []
+                    }
+
+                # Avanzar hasta encontrar los headers de la tabla
+                i += 1
+                while i < len(df):
+                    row = df.iloc[i]
+                    if len(row) > 1 and pd.notna(row.iloc[1]) and str(row.iloc[1]).strip() == 'Nro. Paso':
+                        i += 1  # Saltar la línea de headers
+                        break
+                    i += 1
+
+                # Procesar componentes hasta encontrar 'Fecha de emision' o siguiente 'Artículo'
+                while i < len(df):
+                    row = df.iloc[i]
+
+                    # Verificar si es el fin de esta receta
+                    if len(row) > 1 and pd.notna(row.iloc[1]):
+                        cell_text = str(row.iloc[1]).strip()
+                        if cell_text.startswith('Fecha de emision') or cell_text == 'Artículo':
+                            break
+
+                    # Verificar si esta fila tiene datos de componente (columnas 12, 14, 16, 17)
+                    if len(row) > 17 and pd.notna(row.iloc[12]) and pd.notna(row.iloc[17]):
+                        componente = str(row.iloc[12]).strip()
+                        unidad = str(row.iloc[16]).strip() if len(row) > 16 and pd.notna(row.iloc[16]) else ''
+                        cantidad_str = str(row.iloc[17]).strip().replace(',', '.')
+
+                        try:
+                            cantidad = float(cantidad_str)
+                        except (ValueError, AttributeError):
+                            cantidad = None
+
+                        if componente and cantidad is not None and componente != codigo_receta:
+                            recetas_dict[codigo_receta]['componentes'].append({
+                                'codigo_producto': componente,
+                                'cantidad': cantidad,
+                                'unidad': unidad
+                            })
+                            print(f"  Componente: {componente} - {cantidad} {unidad}")
+
+                    i += 1
+            else:
+                i += 1
+
+        print(f"Recetas procesadas: {len(recetas_dict)}")
+        for codigo, data in list(recetas_dict.items())[:2]:
+            print(f"  {codigo}: {len(data['componentes'])} componentes")
+
+        return recetas_dict, [], {}
+
+    except Exception as e:
+        print(f"Error procesando archivo: {e}")
+        import traceback
+        traceback.print_exc()
+        return {}, [], {}
 
 
 def cargar_recetas_a_db(file_path):
