@@ -5,13 +5,16 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app import db, Producto
 
-def limpiar_inventario_csv(csv_path):
+def limpiar_inventario_csv(file_path):
     """
-    Lee un archivo CSV de inventario y limpia las filas que no son productos.
+    Lee un archivo CSV o XLS de inventario y limpia las filas que no son productos.
     Retorna un DataFrame limpio con solo los productos.
     """
-    # Leer el CSV
-    df = pd.read_csv(csv_path)
+    # Leer el archivo según su extensión
+    if file_path.lower().endswith(('.xls', '.xlsx')):
+        df = pd.read_excel(file_path, engine='xlrd' if file_path.lower().endswith('.xls') else None)
+    else:
+        df = pd.read_csv(file_path)
     
     # Identificar las filas que contienen productos
     # Los productos tienen un código de artículo en la segunda columna
@@ -32,8 +35,15 @@ def limpiar_inventario_csv(csv_path):
     
     # Renombrar columnas para facilitar el trabajo
     # Basándonos en la estructura: Artículo, nombre, Lote, Vto., Estado, Unidad, Cantidad, Total
-    df_productos.columns = ['col0', 'codigo', 'col2', 'nombre', 'lote', 'vencimiento', 
-                           'estado', 'unidad', 'cantidad', 'total']
+    num_cols = len(df_productos.columns)
+    if num_cols >= 10:
+        df_productos.columns = ['col0', 'codigo', 'col2', 'nombre', 'lote', 'vencimiento', 
+                               'estado', 'unidad', 'cantidad', 'total'] + [f'col{i}' for i in range(10, num_cols)]
+    else:
+        # Si hay menos columnas, ajustar
+        default_cols = ['col0', 'codigo', 'col2', 'nombre', 'lote', 'vencimiento', 
+                       'estado', 'unidad', 'cantidad', 'total']
+        df_productos.columns = default_cols[:num_cols]
     
     # Filtrar filas que tienen código de artículo (no vacías)
     df_productos = df_productos[df_productos['codigo'].notna()].copy()

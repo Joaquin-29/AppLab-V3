@@ -5,17 +5,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app import db, Receta, RecetaComponente, Producto
 
 
-def procesar_recetas_csv(csv_path):
+def procesar_recetas_csv(file_path):
     """
-    Lee un archivo CSV de recetas y lo procesa.
-    El formato esperado es un CSV con las siguientes columnas:
+    Lee un archivo CSV o XLS de recetas y lo procesa.
+    El formato esperado es un archivo con las siguientes columnas:
     - Código de receta
     - Nombre de receta
     - Código de componente/producto
     - Cantidad necesaria
     - Unidad
     """
-    df = pd.read_csv(csv_path)
+    # Leer el archivo según su extensión
+    if file_path.lower().endswith(('.xls', '.xlsx')):
+        df = pd.read_excel(file_path, engine='xlrd' if file_path.lower().endswith('.xls') else None)
+    else:
+        df = pd.read_csv(file_path)
     
     # Agrupar por receta
     recetas_dict = {}
@@ -103,7 +107,3 @@ def cargar_recetas_a_db(csv_path):
     return {
         'recetas_cargadas': recetas_cargadas
     }
-        for comp in comps:
-            writer.writerow([article, comp[0], comp[1], comp[2]])
-
-print("Procesamiento completado. Archivo 'processed_recipes_full.csv' creado.")

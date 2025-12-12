@@ -14,13 +14,6 @@
     <input type="text" id="searchInput" class="form-control" placeholder="Buscar productos...">
 </div>
 
-<div class="alert alert-info" role="alert">
-    <strong>Leyenda:</strong>
-    <span class="badge bg-danger">Vencido</span>
-    <span class="badge bg-warning text-dark">Vence en menos de 3 meses</span>
-    <span class="badge bg-success">Vigente</span>
-</div>
-
 <div class="table-responsive">
     <table class="table table-striped table-hover" id="stockTable">
         <thead class="table-dark">
@@ -99,9 +92,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>¡ADVERTENCIA!</strong></p>
-                <p>Esta acción eliminará <strong>TODOS</strong> los productos del inventario de forma permanente.</p>
-                <p>¿Estás seguro de que deseas continuar?</p>
+                <p>Esto borrara todos los productos del inventario de stock. Esta acción no se puede deshacer.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
