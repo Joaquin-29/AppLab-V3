@@ -5,32 +5,200 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AppLab{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-bg: #f8f9fa;
+            --hover-bg: #e9ecef;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .sidebar-brand {
+            padding: 1.5rem 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            display: block;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-brand:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-sidebar {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+        
+        .nav-sidebar .nav-item {
+            margin: 0.25rem 0;
+        }
+        
+        .nav-sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-sidebar .nav-link i {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+            width: 20px;
+        }
+        
+        .nav-sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--accent-color);
+        }
+        
+        .nav-sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left-color: var(--accent-color);
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 2px solid var(--light-bg);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .table {
+            background-color: white;
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid var(--light-bg);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">AppLab</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Inicio</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Características</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Precios</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <a href="{{ url_for('index') }}" class="sidebar-brand">
+            <i class="bi bi-grid-3x3-gap-fill"></i> AppLab
+        </a>
+        <ul class="nav-sidebar">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'cargar' %}active{% endif %}" href="{{ url_for('cargar') }}">
+                    <i class="bi bi-upload"></i> Cargar Archivos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'stock' %}active{% endif %}" href="{{ url_for('stock') }}">
+                    <i class="bi bi-box-seam"></i> Stock
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'recetas' %}active{% endif %}" href="{{ url_for('recetas') }}">
+                    <i class="bi bi-book"></i> Recetas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'produccion' %}active{% endif %}" href="{{ url_for('produccion') }}">
+                    <i class="bi bi-calculator"></i> Producción
+                </a>
+            </li>
+        </ul>
     </nav>
 
     <!-- Main Content -->
-    <div class="container mt-4">
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         {% block content %}
         {% endblock %}
     </div>

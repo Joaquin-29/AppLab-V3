@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock - AppLab{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Inventario de Stock</h2>
+    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#vaciarStockModal">
+        <i class="bi bi-trash"></i> Vaciar Stock
+    </button>
+</div>
+
+<div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Buscar productos...">
+</div>
+
+<div class="alert alert-info" role="alert">
+    <strong>Leyenda:</strong>
+    <span class="badge bg-danger">Vencido</span>
+    <span class="badge bg-warning text-dark">Vence en menos de 3 meses</span>
+    <span class="badge bg-success">Vigente</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="stockTable">
+        <thead class="table-dark">
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Lote</th>
+                <th>Cantidad</th>
+                <th>Unidad</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if productos %}
+                {% for producto in productos %}
+                {% set hoy = now() %}
+                {% if producto.fecha_vencimiento %}
+                    {% set dias_diferencia = (producto.fecha_vencimiento - hoy).days %}
+                    {% if dias_diferencia < 0 %}
+                        {% set clase_vencimiento = 'table-danger' %}
+                        {% set badge_vencimiento = 'bg-danger' %}
+                        {% set texto_vencimiento = 'Vencido' %}
+                    {% elif dias_diferencia < 90 %}
+                        {% set clase_vencimiento = 'table-warning' %}
+                        {% set badge_vencimiento = 'bg-warning text-dark' %}
+                        {% set texto_vencimiento = 'Próximo a vencer' %}
+                    {% else %}
+                        {% set clase_vencimiento = '' %}
+                        {% set badge_vencimiento = 'bg-success' %}
+                        {% set texto_vencimiento = 'Vigente' %}
+                    {% endif %}
+                {% else %}
+                    {% set clase_vencimiento = '' %}
+                    {% set badge_vencimiento = 'bg-secondary' %}
+                    {% set texto_vencimiento = 'Sin fecha' %}
+                {% endif %}
+                <tr class="{{ clase_vencimiento }}">
+                    <td>{{ producto.codigo }}</td>
+                    <td>{{ producto.nombre }}</td>
+                    <td>{{ producto.lote or 'N/A' }}</td>
+                    <td>{{ producto.cantidad_disponible }}</td>
+                    <td>{{ producto.unidad }}</td>
+                    <td>
+                        {% if producto.fecha_vencimiento %}
+                            {{ producto.fecha_vencimiento.strftime('%Y-%m-%d') }}
+                            <br><small><span class="badge {{ badge_vencimiento }}">{{ texto_vencimiento }}</span></small>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if producto.cantidad_disponible > 0 %}
+                            <span class="badge bg-success">Disponible</span>
+                        {% else %}
+                            <span class="badge bg-danger">Agotado</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No hay productos en el inventario</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal de Confirmación para Vaciar Stock -->
+<div class="modal fade" id="vaciarStockModal" tabindex="-1" aria-labelledby="vaciarStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="vaciarStockModalLabel">Confirmar Vaciado de Stock</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¡ADVERTENCIA!</strong></p>
+                <p>Esta acción eliminará <strong>TODOS</strong> los productos del inventario de forma permanente.</p>
+                <p>¿Estás seguro de que deseas continuar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('vaciar_stock') }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Sí, vaciar todo el stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función de búsqueda
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    var input = this.value.toLowerCase();
+    var table = document.getElementById('stockTable');
+    var tr = table.getElementsByTagName('tr');
+    
+    for (var i = 1; i < tr.length; i++) {
+        var td = tr[i].getElementsByTagName('td');
+        var found = false;
+        
+        for (var j = 0; j < td.length; j++) {
+            if (td[j].textContent.toLowerCase().indexOf(input) > -1) {
+                found = true;
+                break;
+            }
+        }
+        
+        tr[i].style.display = found ? '' : 'none';
+    }
+});
+</script>
+{% endblock %}

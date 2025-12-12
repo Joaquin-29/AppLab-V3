@@ -1,22 +1,22 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-db = SQLAlchemy()
+from app import db
 
 class Producto(db.Model):
     __tablename__ = 'productos'
     
     id = db.Column(db.Integer, primary_key=True)
-    codigo = db.Column(db.String(50), unique=True, nullable=False)
+    codigo = db.Column(db.String(50), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     unidad = db.Column(db.String(20), nullable=False)
-    cantidad_disponible = db.Column(db.Integer, nullable=False, default=0)
+    cantidad_disponible = db.Column(db.Float, nullable=False, default=0)
+    fecha_vencimiento = db.Column(db.DateTime, nullable=True)
+    lote = db.Column(db.String(50), nullable=True)
 
     componentes = db.relationship('RecetaComponente', back_populates='producto')
 
     def __repr__(self):
         return f'<Producto {self.nombre}>'
-    
+
 class Receta(db.Model):
     __tablename__ = 'recetas'
     
@@ -28,7 +28,7 @@ class Receta(db.Model):
 
     def __repr__(self):
         return f'<Receta {self.nombre}>'
-    
+
 class RecetaComponente(db.Model):
     __tablename__ = 'receta_componentes'
     

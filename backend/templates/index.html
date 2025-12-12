@@ -3,36 +3,50 @@
 {% block title %}Inicio - AppLab{% endblock %}
 
 {% block content %}
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">Card 1</h5>
-                    <p class="card-text">Descripción breve de la tarjeta 1.</p>
-                    <a href="#" class="btn btn-primary">Ver más</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">Card 2</h5>
-                    <p class="card-text">Descripción breve de la tarjeta 2.</p>
-                    <a href="#" class="btn btn-primary">Ver más</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">  
-            <div class="card">
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">Card 3</h5>
-                    <p class="card-text">Descripción breve de la tarjeta 3.</p>
-                    <a href="#" class="btn btn-primary">Ver más</a>
-                </div>
+<div class="mb-5">
+    <h1 class="display-5 fw-bold mb-3">Bienvenido a AppLab</h1>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-upload" style="font-size: 3rem; color: #3498db;"></i>
+                <h5 class="card-title mt-3">Cargar Archivos</h5>
+                <p class="card-text text-muted">Importa archivos de inventario y recetas desde Excel o CSV.</p>
+                <a href="{{ url_for('cargar') }}" class="btn btn-outline-primary">Ir a Cargar</a>
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-box-seam" style="font-size: 3rem; color: #3498db;"></i>
+                <h5 class="card-title mt-3">Ver Stock</h5>
+                <p class="card-text text-muted">Consulta el inventario disponible con fechas de vencimiento.</p>
+                <a href="{{ url_for('stock') }}" class="btn btn-outline-primary">Ver Stock</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-book" style="font-size: 3rem; color: #3498db;"></i>
+                <h5 class="card-title mt-3">Ver Recetas</h5>
+                <p class="card-text text-muted">Revisa las recetas y sus componentes necesarios.</p>
+                <a href="{{ url_for('recetas') }}" class="btn btn-outline-primary">Ver Recetas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-calculator" style="font-size: 3rem; color: #3498db;"></i>
+                <h5 class="card-title mt-3">Calcular Producción</h5>
+                <p class="card-text text-muted">Verifica si puedes producir las recetas con tu stock actual.</p>
+                <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">Calcular</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

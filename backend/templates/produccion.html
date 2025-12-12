@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Producción - AppLab{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Calcular Producción</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Seleccionar Recetas</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar recetas...">
+                </div>
+                
+                <div id="recetasList">
+                    {% if recetas %}
+                        {% for receta in recetas %}
+                        <div class="card mb-2 receta-item">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1">
+                                        <input type="checkbox" class="form-check-input receta-checkbox" 
+                                               data-receta-id="{{ receta.id }}" 
+                                               data-receta-nombre="{{ receta.nombre }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>{{ receta.nombre }}</strong><br>
+                                        <small class="text-muted">Código: {{ receta.codigo }}</small>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">Cantidad</span>
+                                            <input type="number" 
+                                                   class="form-control cantidad-input" 
+                                                   data-receta-id="{{ receta.id }}"
+                                                   min="1" 
+                                                   value="1"
+                                                   disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay recetas registradas
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <h5 class="mb-0">Resumen de Producción</h5>
+            </div>
+            <div class="card-body">
+                <div id="resumenSeleccion">
+                    <p class="text-muted">No hay recetas seleccionadas</p>
+                </div>
+                
+                <button id="calcularBtn" class="btn btn-primary w-100" disabled>
+                    <i class="bi bi-calculator"></i> Calcular Producción
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Resultados -->
+<div class="modal fade" id="resultadosModal" tabindex="-1" aria-labelledby="resultadosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultadosModalLabel">Resultados del Cálculo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="resultadosBody">
+                <!-- Los resultados se cargarán aquí dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let recetasSeleccionadas = {};
+
+// Habilitar/deshabilitar input de cantidad al marcar checkbox
+document.querySelectorAll('.receta-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const recetaId = this.dataset.recetaId;
+        const cantidadInput = document.querySelector(`.cantidad-input[data-receta-id="${recetaId}"]`);
+        
+        if (this.checked) {
+            cantidadInput.disabled = false;
+            recetasSeleccionadas[recetaId] = {
+                id: parseInt(recetaId),
+                nombre: this.dataset.recetaNombre,
+                cantidad: parseInt(cantidadInput.value)
+            };
+        } else {
+            cantidadInput.disabled = true;
+            delete recetasSeleccionadas[recetaId];
+        }
+        
+        actualizarResumen();
+    });
+});
+
+// Actualizar cantidad
+document.querySelectorAll('.cantidad-input').forEach(input => {
+    input.addEventListener('change', function() {
+        const recetaId = this.dataset.recetaId;
+        if (recetasSeleccionadas[recetaId]) {
+            recetasSeleccionadas[recetaId].cantidad = parseInt(this.value);
+            actualizarResumen();
+        }
+    });
+});
+
+function actualizarResumen() {
+    const resumenDiv = document.getElementById('resumenSeleccion');
+    const calcularBtn = document.getElementById('calcularBtn');
+    
+    const numRecetas = Object.keys(recetasSeleccionadas).length;
+    
+    if (numRecetas === 0) {
+        resumenDiv.innerHTML = '<p class="text-muted">No hay recetas seleccionadas</p>';
+        calcularBtn.disabled = true;
+    } else {
+        let html = '<ul class="list-group">';
+        for (const id in recetasSeleccionadas) {
+            const receta = recetasSeleccionadas[id];
+            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                ${receta.nombre}
+                <span class="badge bg-primary rounded-pill">${receta.cantidad}</span>
+            </li>`;
+        }
+        html += '</ul>';
+        resumenDiv.innerHTML = html;
+        calcularBtn.disabled = false;
+    }
+}
+
+// Calcular producción
+document.getElementById('calcularBtn').addEventListener('click', function() {
+    const recetas = Object.values(recetasSeleccionadas);
+    
+    fetch('{{ url_for("calcular_produccion") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recetas: recetas })
+    })
+    .then(response => response.json())
+    .then(data => {
+        mostrarResultados(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ocurrió un error al calcular la producción');
+    });
+});
+
+function mostrarResultados(data) {
+    const resultadosBody = document.getElementById('resultadosBody');
+    
+    let html = '';
+    
+    if (data.puede_producir) {
+        html += '<div class="alert alert-success"><h5>✓ Se puede producir</h5></div>';
+    } else {
+        html += '<div class="alert alert-danger"><h5>✗ No se puede producir</h5><p>Faltan algunos productos</p></div>';
+    }
+    
+    html += '<table class="table table-striped">';
+    html += '<thead><tr><th>Producto</th><th>Necesario</th><th>Disponible</th><th>Estado</th><th>Detalles</th></tr></thead>';
+    html += '<tbody>';
+    
+    data.detalles.forEach(detalle => {
+        const clase = detalle.estado === 'suficiente' ? 'table-success' : 'table-danger';
+        html += `<tr class="${clase}">`;
+        html += `<td>${detalle.producto}</td>`;
+        html += `<td>${detalle.necesario.toFixed(2)}</td>`;
+        html += `<td>${detalle.disponible.toFixed(2)}</td>`;
+        
+        if (detalle.estado === 'suficiente') {
+            html += '<td><span class="badge bg-success">Suficiente</span></td>';
+            html += '<td>';
+            if (detalle.lotes_a_usar) {
+                html += '<small>';
+                detalle.lotes_a_usar.forEach(lote => {
+                    html += `Lote ${lote.lote}: ${lote.cantidad.toFixed(2)} (Vto: ${lote.vencimiento})<br>`;
+                });
+                html += '</small>';
+            }
+            html += '</td>';
+        } else {
+            html += '<td><span class="badge bg-danger">Insuficiente</span></td>';
+            html += `<td><small class="text-danger">Falta: ${detalle.faltante.toFixed(2)}</small></td>`;
+        }
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    
+    resultadosBody.innerHTML = html;
+    
+    const modal = new bootstrap.Modal(document.getElementById('resultadosModal'));
+    modal.show();
+}
+
+// Función de búsqueda
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const input = this.value.toLowerCase();
+    document.querySelectorAll('.receta-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.indexOf(input) > -1 ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
