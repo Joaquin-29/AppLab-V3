@@ -302,10 +302,15 @@ def cargar_recetas_a_db(file_path):
     
     for data in recetas_dict.values():
         for comp in data['componentes']:
-            producto = Producto.query.filter(
-                (Producto.codigo.ilike(comp['codigo_producto'])) | 
-                (Producto.nombre.ilike(comp['codigo_producto']))
+            # Buscar primero productos con nombres descriptivos, luego por código
+            producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).filter(
+                ~Producto.nombre.ilike(comp['codigo_producto'])
             ).first()
+            
+            if not producto:
+                # Si no hay producto con nombre descriptivo, buscar cualquier producto con ese código
+                producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
+            
             if producto:
                 productos_encontrados += 1
             else:
@@ -329,17 +334,20 @@ def cargar_recetas_a_db(file_path):
             # Agregar componentes
             componentes_agregados = 0
             for comp in data['componentes']:
-                # Buscar el producto por código o nombre (case insensitive)
-                producto = Producto.query.filter(
-                    (Producto.codigo.ilike(comp['codigo_producto'])) | 
-                    (Producto.nombre.ilike(comp['codigo_producto']))
+                # Buscar primero productos con nombres descriptivos, luego por código
+                producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).filter(
+                    ~Producto.nombre.ilike(comp['codigo_producto'])
                 ).first()
+                
+                if not producto:
+                    # Si no hay producto con nombre descriptivo, buscar cualquier producto con ese código
+                    producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
                 
                 if not producto:
                     # Crear el producto si no existe
                     producto = Producto(
                         codigo=comp['codigo_producto'],
-                        nombre=comp['codigo_producto'],  # Usar el mismo como nombre
+                        nombre=f"Producto {comp['codigo_producto']}",  # Nombre descriptivo
                         unidad=comp['unidad'],
                         cantidad_disponible=0,  # Sin stock inicialmente
                         fecha_vencimiento=None,
@@ -511,6 +519,9 @@ def calcular_produccion():
                                    .order_by(Producto.fecha_vencimiento)\
                                    .all()
         
+        # Usar el nombre del primer producto (todos tienen el mismo nombre para el mismo código)
+        nombre_producto = productos[0].nombre if productos else 'Desconocido'
+        
         cantidad_disponible = sum(p.cantidad_disponible for p in productos)
         
         # Verificar si hay lotes que vencen en menos de 3 meses
@@ -522,7 +533,7 @@ def calcular_produccion():
         if cantidad_disponible < cantidad_necesaria:
             puede_producir = False
             detalles.append({
-                'producto': producto_base.nombre,
+                'producto': nombre_producto,
                 'codigo': producto_base.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
@@ -548,7 +559,7 @@ def calcular_produccion():
                 cantidad_restante -= cantidad_a_usar
             
             detalles.append({
-                'producto': producto_base.nombre,
+                'producto': nombre_producto,
                 'codigo': producto_base.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
