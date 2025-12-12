@@ -189,14 +189,22 @@ function mostrarResultados(data) {
     html += '<tbody>';
     
     data.detalles.forEach(detalle => {
-        const clase = detalle.estado === 'suficiente' ? 'table-success' : 'table-danger';
+        let clase = '';
+        if (detalle.estado === 'suficiente') {
+            clase = detalle.por_vencer ? 'table-warning' : 'table-success';
+        } else {
+            clase = 'table-danger';
+        }
+        
         html += `<tr class="${clase}">`;
         html += `<td>${detalle.producto}</td>`;
         html += `<td>${detalle.necesario.toFixed(2)}</td>`;
         html += `<td>${detalle.disponible.toFixed(2)}</td>`;
         
         if (detalle.estado === 'suficiente') {
-            html += '<td><span class="badge bg-success">Suficiente</span></td>';
+            const badgeClass = detalle.por_vencer ? 'bg-warning text-dark' : 'bg-success';
+            const badgeText = detalle.por_vencer ? 'Suficiente (Por vencer)' : 'Suficiente';
+            html += `<td><span class="badge ${badgeClass}">${badgeText}</span></td>`;
             html += '<td>';
             if (detalle.lotes_a_usar) {
                 html += '<small>';

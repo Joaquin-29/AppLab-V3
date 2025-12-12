@@ -502,23 +502,33 @@ def calcular_produccion():
     # Verificar disponibilidad de cada producto
     puede_producir = True
     detalles = []
+    from datetime import datetime, timedelta
     
     for producto_id, cantidad_necesaria in productos_necesarios.items():
         # Obtener todos los lotes del producto ordenados por fecha de vencimiento
-        productos = Producto.query.filter_by(codigo=db.session.get(Producto, producto_id).codigo)\
+        producto_base = db.session.get(Producto, producto_id)
+        productos = Producto.query.filter_by(codigo=producto_base.codigo)\
                                    .order_by(Producto.fecha_vencimiento)\
                                    .all()
         
         cantidad_disponible = sum(p.cantidad_disponible for p in productos)
         
+        # Verificar si hay lotes que vencen en menos de 3 meses
+        hoy = datetime.now().date()
+        fecha_limite = hoy + timedelta(days=90)  # 3 meses
+        tiene_lotes_por_vencer = any(p.fecha_vencimiento and p.fecha_vencimiento.date() <= fecha_limite 
+                                   for p in productos if p.fecha_vencimiento)
+        
         if cantidad_disponible < cantidad_necesaria:
             puede_producir = False
             detalles.append({
-                'producto': productos[0].nombre if productos else 'Desconocido',
+                'producto': producto_base.nombre,
+                'codigo': producto_base.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
                 'faltante': cantidad_necesaria - cantidad_disponible,
-                'estado': 'insuficiente'
+                'estado': 'insuficiente',
+                'por_vencer': tiene_lotes_por_vencer
             })
         else:
             # Verificar vencimientos
@@ -538,11 +548,13 @@ def calcular_produccion():
                 cantidad_restante -= cantidad_a_usar
             
             detalles.append({
-                'producto': productos[0].nombre,
+                'producto': producto_base.nombre,
+                'codigo': producto_base.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
                 'lotes_a_usar': productos_a_usar,
-                'estado': 'suficiente'
+                'estado': 'suficiente',
+                'por_vencer': tiene_lotes_por_vencer
             })
     
     return jsonify({
