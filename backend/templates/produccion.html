@@ -179,9 +179,9 @@ function mostrarResultados(data) {
     let html = '';
     
     if (data.puede_producir) {
-        html += '<div class="alert alert-success"><h5>✓ Se puede producir</h5></div>';
+        html += '<div class="alert alert-success"><h5>Se puede producir</h5></div>';
     } else {
-        html += '<div class="alert alert-danger"><h5>✗ No se puede producir</h5><p>Faltan algunos productos</p></div>';
+        html += '<div class="alert alert-danger"><h5>No se puede producir</h5><p>Faltan algunos productos</p></div>';
     }
     
     html += '<table class="table table-striped">';

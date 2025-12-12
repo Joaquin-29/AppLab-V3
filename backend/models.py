@@ -1,6 +1,8 @@
-from datetime import datetime
-from app import db
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
+
+# ==================== MODELOS ====================
 class Producto(db.Model):
     __tablename__ = 'productos'
     
@@ -11,6 +13,7 @@ class Producto(db.Model):
     cantidad_disponible = db.Column(db.Float, nullable=False, default=0)
     fecha_vencimiento = db.Column(db.DateTime, nullable=True)
     lote = db.Column(db.String(50), nullable=True)
+    is_master = db.Column(db.Boolean, default=False)  # True para productos maestros (de recetas), False para stock
 
     componentes = db.relationship('RecetaComponente', back_populates='producto')
 
@@ -43,3 +46,10 @@ class RecetaComponente(db.Model):
 
     def __repr__(self):
         return f'<RecetaComponente RecetaID: {self.receta_id}, ProductoID: {self.producto_id}, Cantidad: {self.cantidad_necesaria} {self.unidad}>'
+
+# ==================== FIN MODELOS ====================
+
+
+
+
+
