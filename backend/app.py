@@ -225,12 +225,11 @@ def procesar_recetas_csv(file_path):
 
                 print(f"Encontrada receta: {codigo_receta} - {nombre_receta}")
 
-                # Inicializar la receta
-                if codigo_receta not in recetas_dict:
-                    recetas_dict[codigo_receta] = {
-                        'nombre': nombre_receta,
-                        'componentes': []
-                    }
+                # Inicializar o reinicializar la receta (para evitar duplicados)
+                recetas_dict[codigo_receta] = {
+                    'nombre': nombre_receta,
+                    'componentes': []
+                }
 
                 # Avanzar hasta encontrar los headers de la tabla
                 i += 1
@@ -263,12 +262,19 @@ def procesar_recetas_csv(file_path):
                             cantidad = None
 
                         if componente and cantidad is not None and componente != codigo_receta:
-                            recetas_dict[codigo_receta]['componentes'].append({
-                                'codigo_producto': componente,
-                                'cantidad': cantidad,
-                                'unidad': unidad
-                            })
-                            print(f"  Componente: {componente} - {cantidad} {unidad}")
+                            # Verificar si este componente ya existe en la receta
+                            existe = any(comp['codigo_producto'] == componente and 
+                                       comp['cantidad'] == cantidad and 
+                                       comp['unidad'] == unidad 
+                                       for comp in recetas_dict[codigo_receta]['componentes'])
+                            
+                            if not existe:
+                                recetas_dict[codigo_receta]['componentes'].append({
+                                    'codigo_producto': componente,
+                                    'cantidad': cantidad,
+                                    'unidad': unidad
+                                })
+                                print(f"  Componente: {componente} - {cantidad} {unidad}")
 
                     i += 1
             else:
