@@ -22,6 +22,7 @@ else:
     # Desarrollo: usar rutas relativas
     db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.db')
     uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'
@@ -553,8 +554,9 @@ def calcular_produccion():
     for producto_id, cantidad_necesaria in productos_necesarios.items():
         # Obtener todos los lotes del producto ordenados por fecha de vencimiento
         producto_base = db.session.get(Producto, producto_id)
-        productos = Producto.query.filter_by(codigo=producto_base.codigo)\
-                                   .order_by(Producto.fecha_vencimiento)\
+        productos = Producto.query.filter_by(codigo=producto_base.codigo, is_master=False)\
+                                   .filter(Producto.cantidad_disponible > 0)\
+                                   .order_by(Producto.fecha_vencimiento.asc().nulls_last())\
                                    .all()
         
         # Usar el nombre del primer producto (todos tienen el mismo nombre para el mismo código)
@@ -590,18 +592,25 @@ def calcular_produccion():
                 
                 cantidad_a_usar = min(producto.cantidad_disponible, cantidad_restante)
                 productos_a_usar.append({
-                    'lote': producto.lote,
+                    'lote': producto.lote or 'N/A',
                     'cantidad': cantidad_a_usar,
                     'vencimiento': producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto.fecha_vencimiento else 'N/A'
                 })
                 cantidad_restante -= cantidad_a_usar
+            
+            # Mostrar todos los lotes disponibles con sus cantidades totales
+            lotes_disponibles = [{
+                'lote': p.lote or 'N/A',
+                'cantidad': p.cantidad_disponible,
+                'vencimiento': p.fecha_vencimiento.strftime('%Y-%m-%d') if p.fecha_vencimiento else 'N/A'
+            } for p in productos]
             
             detalles.append({
                 'producto': nombre_producto,
                 'codigo': producto_base.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
-                'lotes_a_usar': productos_a_usar,
+                'lotes_a_usar': lotes_disponibles,
                 'estado': 'suficiente',
                 'por_vencer': tiene_lotes_por_vencer
             })
