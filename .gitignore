@@ -1,5 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,flask,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,flask,visualstudiocode
+*python-3.10.11-amd64.exe
 
 ### Flask ###
 instance/*
