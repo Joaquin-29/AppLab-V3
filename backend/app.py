@@ -253,6 +253,7 @@ def procesar_recetas_csv(file_path):
                     # Verificar si esta fila tiene datos de componente (columnas 12, 14, 16, 17)
                     if len(row) > 17 and pd.notna(row.iloc[12]) and pd.notna(row.iloc[17]):
                         componente = str(row.iloc[12]).strip()
+                        nombre = str(row.iloc[14]).strip() if len(row) > 14 and pd.notna(row.iloc[14]) else componente
                         unidad = str(row.iloc[16]).strip() if len(row) > 16 and pd.notna(row.iloc[16]) else ''
                         cantidad_str = str(row.iloc[17]).strip().replace(',', '.')
 
@@ -271,6 +272,7 @@ def procesar_recetas_csv(file_path):
                             if not existe:
                                 recetas_dict[codigo_receta]['componentes'].append({
                                     'codigo_producto': componente,
+                                    'nombre': nombre,
                                     'cantidad': cantidad,
                                     'unidad': unidad
                                 })
@@ -308,17 +310,15 @@ def cargar_recetas_a_db(file_path):
     
     for data in recetas_dict.values():
         for comp in data['componentes']:
-            # Buscar primero productos con nombres descriptivos, luego por código
-            producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).filter(
-                ~Producto.nombre.ilike(comp['codigo_producto'])
-            ).first()
-            
-            if not producto:
-                # Si no hay producto con nombre descriptivo, buscar cualquier producto con ese código
-                producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
+            # Buscar producto por código (siempre buscar primero por código)
+            producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
             
             if producto:
                 productos_encontrados += 1
+                # Actualizar nombre si es genérico
+                if producto.nombre == f"Producto {comp['codigo_producto']}":
+                    producto.nombre = comp['nombre']
+                    db.session.add(producto)
             else:
                 productos_creados += 1
     
@@ -328,55 +328,60 @@ def cargar_recetas_a_db(file_path):
         # Verificar si la receta ya existe
         receta_existente = Receta.query.filter_by(codigo=codigo_receta).first()
         
-        if not receta_existente:
+        if receta_existente:
+            # Si existe, borrar componentes antiguos y agregar nuevos
+            RecetaComponente.query.filter_by(receta_id=receta_existente.id).delete()
+            receta_existente.nombre = data['nombre']  # Actualizar nombre si cambió
+            db.session.add(receta_existente)
+            receta = receta_existente
+        else:
             # Crear nueva receta
-            nueva_receta = Receta(
+            receta = Receta(
                 codigo=codigo_receta,
                 nombre=data['nombre']
             )
-            db.session.add(nueva_receta)
+            db.session.add(receta)
             db.session.flush()  # Para obtener el ID
+        
+        # Agregar componentes
+        componentes_agregados = 0
+        for comp in data['componentes']:
+            # Buscar producto por código
+            producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
             
-            # Agregar componentes
-            componentes_agregados = 0
-            for comp in data['componentes']:
-                # Buscar primero productos con nombres descriptivos, luego por código
-                producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).filter(
-                    ~Producto.nombre.ilike(comp['codigo_producto'])
-                ).first()
-                
-                if not producto:
-                    # Si no hay producto con nombre descriptivo, buscar cualquier producto con ese código
-                    producto = Producto.query.filter(Producto.codigo.ilike(comp['codigo_producto'])).first()
-                
-                if not producto:
-                    # Crear el producto si no existe
-                    producto = Producto(
-                        codigo=comp['codigo_producto'],
-                        nombre=f"Producto {comp['codigo_producto']}",  # Nombre descriptivo
-                        unidad=comp['unidad'],
-                        cantidad_disponible=0,  # Sin stock inicialmente
-                        fecha_vencimiento=None,
-                        lote=None,
-                        is_master=True  # Producto maestro creado desde recetas
-                    )
-                    db.session.add(producto)
-                    db.session.flush()  # Para obtener el ID
-                
+            if not producto:
+                # Crear el producto si no existe
+                producto = Producto(
+                    codigo=comp['codigo_producto'],
+                    nombre=comp['nombre'],
+                    unidad=comp['unidad'],
+                    cantidad_disponible=0,  # Sin stock inicialmente
+                    fecha_vencimiento=None,
+                    lote=None,
+                    is_master=True  # Producto maestro creado desde recetas
+                )
+                db.session.add(producto)
+                db.session.flush()  # Para obtener el ID
+            
+            # Verificar si el componente ya existe para esta receta
+            componente_existente = RecetaComponente.query.filter_by(
+                receta_id=receta.id,
+                producto_id=producto.id
+            ).first()
+            
+            if not componente_existente:
+                # Crear componente
                 componente = RecetaComponente(
-                    receta_id=nueva_receta.id,
+                    receta_id=receta.id,
                     producto_id=producto.id,
                     cantidad_necesaria=comp['cantidad'],
                     unidad=comp['unidad']
                 )
                 db.session.add(componente)
                 componentes_agregados += 1
-            
-            if componentes_agregados > 0:
-                recetas_cargadas += 1
-            else:
-                # Si no se agregaron componentes, eliminar la receta
-                db.session.delete(nueva_receta)
+        
+        if componentes_agregados > 0:
+            recetas_cargadas += 1
     
     db.session.commit()
     
