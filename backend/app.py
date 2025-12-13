@@ -385,12 +385,25 @@ def cargar_recetas_a_db(file_path):
     
     db.session.commit()
     
+    # Limpiar productos maestros no utilizados (sin stock y no en ninguna receta)
+    productos_a_eliminar = Producto.query.filter(
+        Producto.is_master == True,
+        Producto.cantidad_disponible == 0,
+        ~Producto.componentes.any()  # No está en ninguna RecetaComponente
+    ).all()
+    
+    for producto in productos_a_eliminar:
+        db.session.delete(producto)
+    
+    db.session.commit()
+    
     return {
         'recetas_cargadas': recetas_cargadas,
         'total_recetas_procesadas': total_recetas_procesadas,
         'total_componentes': total_componentes,
         'productos_encontrados': productos_encontrados,
         'productos_creados': productos_creados,
+        'productos_eliminados': len(productos_a_eliminar),
         'columnas_detectadas': columns,
         'mapeo_columnas': col_map
     }
@@ -471,7 +484,21 @@ def vaciar_recetas():
         num_recetas = Receta.query.count()
         Receta.query.delete()  # Esto debería eliminar recetas y componentes por cascade
         db.session.commit()
-        flash(f'Recetas vaciadas: {num_recetas} recetas eliminadas', 'success')
+        
+        # Limpiar productos maestros no utilizados
+        productos_a_eliminar = Producto.query.filter(
+            Producto.is_master == True,
+            Producto.cantidad_disponible == 0,
+            ~Producto.componentes.any()
+        ).all()
+        
+        num_productos_eliminados = len(productos_a_eliminar)
+        for producto in productos_a_eliminar:
+            db.session.delete(producto)
+        
+        db.session.commit()
+        
+        flash(f'Recetas vaciadas: {num_recetas} recetas y {num_productos_eliminados} productos maestros no utilizados eliminados', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al vaciar recetas: {str(e)}', 'danger')
