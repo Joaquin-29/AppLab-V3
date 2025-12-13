@@ -20,14 +20,14 @@ fi
 
 # Install PyInstaller
 echo "📦 Installing PyInstaller..."
-$PYTHON_CMD -m pip install pyinstaller
+wine python -m pip install pyinstaller
 
 # Create executable
 echo "🏗️ Creating Windows executable..."
 echo "This may take several minutes..."
 
 # Build with PyInstaller
-$HOME/.local/bin/pyinstaller \
+wine pyinstaller \
     --onefile \
     --name AppLab-V3 \
     --add-data "backend/templates:templates" \
