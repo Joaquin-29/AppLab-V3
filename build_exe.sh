@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# AppLab-V3 - Build Windows Executable
-# Creates a standalone .exe file for Windows
+# AppLab-V3 - Build Executable
+# Creates a standalone executable for the current platform
 
-echo "🚀 Building AppLab-V3 Windows Executable..."
+echo "🚀 Building AppLab-V3 Executable..."
 echo
 
 # Check if Python is available
@@ -27,12 +27,10 @@ echo "🏗️ Creating Windows executable..."
 echo "This may take several minutes..."
 
 # Build with PyInstaller
-$PYTHON_CMD -m pyinstaller \
+$HOME/.local/bin/pyinstaller \
     --onefile \
-    --windowed \
     --name AppLab-V3 \
     --add-data "backend/templates:templates" \
-    --add-data "backend/static:static" \
     --hidden-import flask_sqlalchemy \
     --hidden-import pandas \
     --hidden-import openpyxl \
@@ -43,22 +41,21 @@ $PYTHON_CMD -m pyinstaller \
     backend/app.py
 
 # Check if executable was created
-if [ -f "dist/AppLab-V3.exe" ]; then
-    echo "✅ SUCCESS! Windows executable created: dist/AppLab-V3.exe"
+if [ -f "dist/AppLab-V3" ] || [ -f "dist/AppLab-V3.exe" ]; then
+    echo "✅ SUCCESS! Executable created: dist/AppLab-V3"
     echo
     echo "📦 Creating distribution package..."
-    mkdir -p "AppLab-V3_Windows"
-    cp "dist/AppLab-V3.exe" "AppLab-V3_Windows/"
-    cp "README.md" "AppLab-V3_Windows/README.txt"
-    
-    echo "📁 Distribution ready in: AppLab-V3_Windows/"
+    mkdir -p "AppLab-V3_Dist"
+    cp "dist/AppLab-V3"* "AppLab-V3_Dist/"
+    cp "README.md" "AppLab-V3_Dist/README.txt"
+    echo "📁 Distribution ready in: AppLab-V3_Dist/"
     echo "💾 Zip the entire folder for easy sharing!"
     echo
     echo "🎯 Instructions for users:"
-    echo "1. Extract the AppLab-V3_Windows folder anywhere"
-    echo "2. Double-click AppLab-V3.exe"
+    echo "1. Extract the AppLab-V3_Dist folder anywhere"
+    echo "2. Run the AppLab-V3 executable"
     echo "3. Browser opens automatically at http://localhost:5000"
-    echo "4. Data is saved in user's Documents/AppLab-V3 folder"
+    echo "4. Data is saved in user's home directory"
 else
     echo "❌ Build failed - check for errors above"
     exit 1
