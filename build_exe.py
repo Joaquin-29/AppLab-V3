@@ -12,30 +12,24 @@ if os.path.exists('build'):
     shutil.rmtree('build')
 if os.path.exists('dist'):
     shutil.rmtree('dist')
+if os.path.exists('AppLab.spec'):
+    os.remove('AppLab.spec')
 
 # Configuración de PyInstaller
 PyInstaller.__main__.run([
-    'backend/run_exe.py',                          # Script principal optimizado para ejecutables
-    '--name=AppLab',                               # Nombre del ejecutable
-    '--onefile',                                   # Un solo archivo ejecutable
-    '--console',                                   # CON consola para ver logs/errores
-    '--add-data=backend/templates:templates',      # Incluir templates
-    '--add-data=backend/instance:instance',        # Incluir carpeta de BD
-    '--add-data=uploads:uploads',                  # Incluir carpeta uploads
+    'backend/app.py',                    # Script principal
+    '--name=AppLab',                     # Nombre del ejecutable
+    '--onefile',                         # Un solo archivo ejecutable
+    '--windowed',                        # Sin consola
+    '--add-data=backend/templates:templates',  # Incluir templates
     '--hidden-import=flask',
     '--hidden-import=flask_sqlalchemy',
     '--hidden-import=sqlalchemy',
     '--hidden-import=pandas',
-    '--hidden-import=openpyxl',                    # Para leer Excel
-    '--hidden-import=xlrd',                        # Para leer XLS antiguos
-    '--hidden-import=werkzeug',
-    '--hidden-import=jinja2',
-    '--hidden-import=webbrowser',                  # Para abrir navegador
-    '--hidden-import=threading',                   # Para threads
+    '--hidden-import=openpyxl',          # Para leer Excel
+    '--hidden-import=xlrd',              # Para leer XLS antiguos
     '--collect-all=flask',
     '--collect-all=sqlalchemy',
-    '--copy-metadata=flask',
-    '--copy-metadata=werkzeug',
 ])
 
 print("\n" + "="*50)
