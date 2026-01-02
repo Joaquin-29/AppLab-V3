@@ -144,41 +144,49 @@ def calcular_produccion():
     detalles = []
     
     for producto_id, cantidad_necesaria in productos_necesarios.items():
-        # Obtener todos los lotes del producto ordenados por fecha de vencimiento
-        productos = Producto.query.filter_by(codigo=db.session.get(Producto, producto_id).codigo)\
-                                   .order_by(Producto.fecha_vencimiento)\
-                                   .all()
+        # Obtener el producto maestro o de receta
+        producto_referencia = db.session.get(Producto, producto_id)
         
-        cantidad_disponible = sum(p.cantidad_disponible for p in productos)
+        if not producto_referencia:
+            continue
+        
+        # Obtener todos los lotes del inventario con el mismo código, ordenados por vencimiento
+        productos_stock = Producto.query.filter_by(
+            codigo=producto_referencia.codigo,
+            is_master=False  # Solo productos de stock (no maestros)
+        ).order_by(Producto.fecha_vencimiento.asc()).all()
+        
+        # Calcular cantidad total disponible
+        cantidad_disponible = sum(p.cantidad_disponible for p in productos_stock)
         
         if cantidad_disponible < cantidad_necesaria:
             puede_producir = False
             detalles.append({
-                'producto': productos[0].nombre if productos else 'Desconocido',
+                'producto': producto_referencia.nombre or producto_referencia.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
                 'faltante': cantidad_necesaria - cantidad_disponible,
                 'estado': 'insuficiente'
             })
         else:
-            # Verificar vencimientos
+            # Calcular qué lotes se usarán (FIFO por vencimiento)
             productos_a_usar = []
             cantidad_restante = cantidad_necesaria
             
-            for producto in productos:
+            for producto in productos_stock:
                 if cantidad_restante <= 0:
                     break
                 
                 cantidad_a_usar = min(producto.cantidad_disponible, cantidad_restante)
                 productos_a_usar.append({
-                    'lote': producto.lote,
+                    'lote': producto.lote or 'S/L',
                     'cantidad': cantidad_a_usar,
                     'vencimiento': producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto.fecha_vencimiento else 'N/A'
                 })
                 cantidad_restante -= cantidad_a_usar
             
             detalles.append({
-                'producto': productos[0].nombre,
+                'producto': producto_referencia.nombre or producto_referencia.codigo,
                 'necesario': cantidad_necesaria,
                 'disponible': cantidad_disponible,
                 'lotes_a_usar': productos_a_usar,
