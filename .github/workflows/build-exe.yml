@@ -6,6 +6,9 @@ on:
       - 'v*'  # Se activa cuando creas un tag como v1.0, v1.1, etc.
   workflow_dispatch:  # Permite ejecutar manualmente desde GitHub
 
+permissions:
+  contents: write  # Necesario para crear releases
+
 jobs:
   build:
     runs-on: windows-latest
