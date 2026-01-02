@@ -228,8 +228,15 @@ def resetear_db():
     
     return redirect(url_for('index'))
 
-
-
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    """Endpoint para cerrar el servidor de forma segura"""
+    import os
+    import signal
+    
+    # Enviar señal para cerrar el proceso
+    os.kill(os.getpid(), signal.SIGINT)
+    return jsonify({'status': 'Servidor cerrándose...'})
 
 
 
