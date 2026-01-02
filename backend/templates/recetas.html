@@ -5,9 +5,6 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Recetas</h2>
-    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#vaciarRecetasModal">
-        <i class="bi bi-trash"></i> Vaciar Recetas
-    </button>
 </div>
 
 <div class="mb-3">
@@ -60,27 +57,6 @@
             </div>
         </div>
     {% endif %}
-</div>
-
-<!-- Modal para vaciar recetas -->
-<div class="modal fade" id="vaciarRecetasModal" tabindex="-1" aria-labelledby="vaciarRecetasModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="vaciarRecetasModalLabel">Vaciar Recetas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Esto borrar todas las recetas. Esta acción no se puede deshacer.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('vaciar_recetas') }}" method="post" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">Eliminar recetas</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>

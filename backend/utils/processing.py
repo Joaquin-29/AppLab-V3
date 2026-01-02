@@ -284,6 +284,7 @@ def cargar_recetas_a_db(file_path):
         if receta_existente:
             # Si la receta ya existe, eliminar sus componentes antiguos para recargarlos
             RecetaComponente.query.filter_by(receta_id=receta_existente.id).delete()
+            db.session.flush()  # Asegurar que la eliminación se aplique antes de agregar nuevos
             receta = receta_existente
         else:
             # Crear nueva receta
