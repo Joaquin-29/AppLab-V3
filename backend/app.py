@@ -154,25 +154,27 @@ def calcular_produccion():
             else:
                 productos_necesarios[producto_id] = cantidad_necesaria
     
-    # Verificar disponibilidad de cada producto
     puede_producir = True
     detalles = []
     
     for producto_id, cantidad_necesaria in productos_necesarios.items():
-        # Obtener el producto maestro o de receta
         producto_referencia = db.session.get(Producto, producto_id)
         
         if not producto_referencia:
             continue
         
-        # Obtener todos los lotes del inventario con el mismo código, ordenados por vencimiento
         productos_stock = Producto.query.filter_by(
             codigo=producto_referencia.codigo,
-            is_master=False  # Solo productos de stock (no maestros)
+            is_master=False
         ).order_by(Producto.fecha_vencimiento.asc()).all()
         
-        # Calcular cantidad total disponible
-        cantidad_disponible = sum(p.cantidad_disponible for p in productos_stock)
+        fecha_actual = datetime.now()
+        productos_stock_validos = [
+            p for p in productos_stock 
+            if p.fecha_vencimiento is None or p.fecha_vencimiento >= fecha_actual
+        ]
+        
+        cantidad_disponible = sum(p.cantidad_disponible for p in productos_stock_validos)
         
         if cantidad_disponible < cantidad_necesaria:
             puede_producir = False
@@ -184,11 +186,10 @@ def calcular_produccion():
                 'estado': 'insuficiente'
             })
         else:
-            # Calcular qué lotes se usarán (FIFO por vencimiento)
             productos_a_usar = []
             cantidad_restante = cantidad_necesaria
             
-            for producto in productos_stock:
+            for producto in productos_stock_validos:
                 if cantidad_restante <= 0:
                     break
                 
