@@ -87,12 +87,27 @@ def upload_file():
 
 @app.route('/vaciar-recetas', methods=['POST'])
 def vaciar_recetas():
-    """Endpoint para vaciar todas las recetas"""
+    """Endpoint para vaciar todas las recetas y sus componentes"""
     try:
         num_recetas = Receta.query.count()
-        Receta.query.delete()  # Esto debería eliminar recetas y componentes por cascade
+        num_componentes = RecetaComponente.query.count()
+        
+        # Eliminar recetas (esto también elimina componentes por cascade)
+        Receta.query.delete()
+        
+        # Eliminar productos maestros que ya no tienen componentes asociados
+        productos_maestros_huerfanos = Producto.query.filter_by(is_master=True).filter(
+            ~Producto.id.in_(
+                db.session.query(RecetaComponente.producto_id).distinct()
+            )
+        ).all()
+        
+        num_maestros_eliminados = len(productos_maestros_huerfanos)
+        for producto in productos_maestros_huerfanos:
+            db.session.delete(producto)
+        
         db.session.commit()
-        flash(f'Recetas vaciadas: {num_recetas} recetas eliminadas', 'success')
+        flash(f'Recetas vaciadas: {num_recetas} recetas, {num_componentes} componentes y {num_maestros_eliminados} productos maestros eliminados', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al vaciar recetas: {str(e)}', 'danger')
@@ -197,6 +212,21 @@ def calcular_produccion():
         'puede_producir': puede_producir,
         'detalles': detalles
     })
+
+@app.route('/resetear-db', methods=['POST'])
+def resetear_db():
+    """Endpoint para eliminar completamente la base de datos y reiniciarla"""
+    try:
+        # Eliminar todas las tablas
+        db.drop_all()
+        # Recrear todas las tablas
+        db.create_all()
+        flash('Base de datos reseteada completamente. Todas las recetas y productos han sido eliminados.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al resetear la base de datos: {str(e)}', 'danger')
+    
+    return redirect(url_for('index'))
 
 
 

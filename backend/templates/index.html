@@ -3,8 +3,15 @@
 {% block title %}Inicio - AppLab{% endblock %}
 
 {% block content %}
-<div class="mb-5">
-    <h1 class="display-5 fw-bold mb-3">Bienvenido a AppLab</h1>
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="display-5 fw-bold mb-3">Bienvenido a AppLab</h1>
+    </div>
+    <div>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#resetearDBModal">
+            <i class="bi bi-trash3"></i> Resetear Base de Datos
+        </button>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -45,6 +52,26 @@
                 <h5 class="card-title mt-3">Calcular Producción</h5>
                 <p class="card-text text-muted">Verifica si puedes producir las recetas con tu stock actual.</p>
                 <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">Calcular</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resetearDBModal" tabindex="-1" aria-labelledby="resetearDBModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="resetearDBModalLabel">⚠️ Resetear Base de Datos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger fw-bold">La base de datos será recreada desde cero.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('resetear_db') }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Sí, resetear todo</button>
+                </form>
             </div>
         </div>
     </div>
