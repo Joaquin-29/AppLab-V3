@@ -181,7 +181,7 @@ function mostrarResultados(data) {
     if (data.puede_producir) {
         html += '<div class="alert alert-success"><h5>Se puede producir</h5></div>';
     } else {
-        html += '<div class="alert alert-danger"><h5>No se puede producir</h5><p>Faltan algunos productos</p></div>';
+        html += '<div class="alert alert-danger"><h5>No se puede producir</h5></div>';
     }
     
     html += '<table class="table table-striped">';
@@ -197,19 +197,38 @@ function mostrarResultados(data) {
         
         if (detalle.estado === 'suficiente') {
             html += '<td><span class="badge bg-success">Suficiente</span></td>';
-            html += '<td>';
-            if (detalle.lotes_a_usar) {
-                html += '<small>';
-                detalle.lotes_a_usar.forEach(lote => {
-                    html += `Lote ${lote.lote}: ${lote.cantidad.toFixed(2)} (Vto: ${lote.vencimiento})<br>`;
-                });
-                html += '</small>';
-            }
-            html += '</td>';
         } else {
             html += '<td><span class="badge bg-danger">Insuficiente</span></td>';
-            html += `<td><small class="text-danger">Falta: ${detalle.faltante.toFixed(2)}</small></td>`;
         }
+        
+        // Mostrar todos los lotes (vencidos, próximos a vencer y vigentes)
+        html += '<td><small>';
+        if (detalle.lotes && detalle.lotes.length > 0) {
+            detalle.lotes.forEach(lote => {
+                let estilo = '';
+                let textoEstado = '';
+                
+                if (lote.vencido) {
+                    estilo = 'color: red; font-weight: bold;';
+                    textoEstado = ' (VENCIDO)';
+                } else if (lote.proximo_vencer) {
+                    estilo = 'color: orange; font-weight: bold;';
+                    textoEstado = ' (PRÓXIMO A VENCER)';
+                }
+                
+                // Siempre mostrar la cantidad total disponible en el lote
+                const cantidadMostrar = lote.cantidad_total.toFixed(2);
+                
+                html += `<span style="${estilo}">Lote ${lote.lote} : ${cantidadMostrar}${textoEstado} (Vto: ${lote.vencimiento})</span><br>`;
+            });
+        }
+        
+        // Mostrar faltante si es insuficiente
+        if (detalle.estado === 'insuficiente' && detalle.faltante) {
+            html += `<span class="text-danger"><strong>Falta: ${detalle.faltante.toFixed(2)}</strong></span>`;
+        }
+        
+        html += '</small></td>';
         
         html += '</tr>';
     });
