@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
+import sys
 import pandas as pd
 from utils.processing import (
     limpiar_inventario_csv, cargar_inventario_a_db,
@@ -10,10 +11,28 @@ from utils.processing import (
 )
 from models import db, Producto, Receta, RecetaComponente
 
-app = Flask(__name__)
+# Configurar rutas para PyInstaller
+if getattr(sys, 'frozen', False):
+    # Ejecutando como .exe - usar directorio del ejecutable
+    base_dir = os.path.dirname(sys.executable)
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    instance_path = os.path.join(base_dir, 'instance')
+    upload_folder = os.path.join(base_dir, 'uploads')
+else:
+    # Ejecutando como script - usar rutas normales
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    template_folder = os.path.join(os.path.dirname(__file__), 'templates')
+    instance_path = os.path.join(base_dir, 'backend', 'instance')
+    upload_folder = os.path.join(base_dir, 'uploads')
+
+# Crear carpetas si no existen
+os.makedirs(instance_path, exist_ok=True)
+os.makedirs(upload_folder, exist_ok=True)
+
+app = Flask(__name__, template_folder=template_folder, instance_path=instance_path)
 app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "app.db")}'
+app.config['UPLOAD_FOLDER'] = upload_folder
 app.config['ALLOWED_EXTENSIONS'] = {'xls', 'xlsx', 'csv'}
 
 db.init_app(app)

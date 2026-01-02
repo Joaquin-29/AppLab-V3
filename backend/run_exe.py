@@ -44,14 +44,6 @@ if __name__ == '__main__':
     except ImportError:
         pass
     
-    # Configurar directorio de trabajo para el .exe
-    if getattr(sys, 'frozen', False):
-        # Si es .exe, usar el directorio donde está el .exe
-        os.chdir(os.path.dirname(sys.executable))
-        # Crear carpetas necesarias
-        os.makedirs('instance', exist_ok=True)
-        os.makedirs('uploads', exist_ok=True)
-    
     # Crear las tablas si no existen
     with app.app_context():
         db.create_all()
