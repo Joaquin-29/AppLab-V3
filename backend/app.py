@@ -235,7 +235,18 @@ def resetear_db():
 
 
 if __name__ == '__main__':
+    import webbrowser
+    import threading
+    
     with app.app_context():
         db.create_all()
     
-    app.run(debug=True)
+    # Abrir el navegador después de 1.5 segundos
+    def open_browser():
+        webbrowser.open('http://127.0.0.1:5000')
+    
+    timer = threading.Timer(1.5, open_browser)
+    timer.start()
+    
+    # Ejecutar Flask sin debug mode cuando es .exe
+    app.run(debug=False, host='127.0.0.1', port=5000)
