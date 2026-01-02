@@ -25,6 +25,12 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
+    - name: Create required directories
+      run: |
+        New-Item -ItemType Directory -Force -Path backend/instance
+        New-Item -ItemType Directory -Force -Path uploads
+      shell: pwsh
+    
     - name: Build EXE with PyInstaller
       run: |
         pyinstaller AppLab.spec
